@@ -1,0 +1,14 @@
+# Global owner — review required for all PRs
+* @arunrajiah
+
+# Admin UI
+/admin/ @arunrajiah
+
+# Infrastructure
+/docker-compose.yml @arunrajiah
+/versions.json @arunrajiah
+/nginx/ @arunrajiah
+/volumes/ @arunrajiah
+
+# CI / workflows
+/.github/ @arunrajiah

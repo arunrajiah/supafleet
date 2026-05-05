@@ -1,0 +1,45 @@
+# Auto-labeling rules — maps labels to file path globs
+# Used by .github/workflows/pr-label.yml
+
+"area: admin":
+  - changed-files:
+    - any-glob-to-any-file: "admin/**"
+
+"area: scripts":
+  - changed-files:
+    - any-glob-to-any-file: "scripts/**"
+
+"area: nginx":
+  - changed-files:
+    - any-glob-to-any-file: "nginx/**"
+
+"area: docker":
+  - changed-files:
+    - any-glob-to-any-file:
+      - "docker-compose.yml"
+      - "versions.json"
+      - "**/Dockerfile"
+
+"area: database":
+  - changed-files:
+    - any-glob-to-any-file: "volumes/db/**"
+
+"documentation":
+  - changed-files:
+    - any-glob-to-any-file:
+      - "*.md"
+      - "docs/**"
+      - "NOTICE"
+      - "LICENSE"
+
+"ci":
+  - changed-files:
+    - any-glob-to-any-file: ".github/**"
+
+"dependencies":
+  - changed-files:
+    - any-glob-to-any-file:
+      - "admin/package.json"
+      - "admin/package-lock.json"
+      - "versions.json"
+      - ".github/renovate.json"

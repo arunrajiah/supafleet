@@ -1,0 +1,37 @@
+name: PR title lint
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  lint-pr-title:
+    name: Conventional commit format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Allow these types (matches CONTRIBUTING.md)
+          types: |
+            feat
+            fix
+            docs
+            chore
+            refactor
+            test
+            ci
+            perf
+          # Allow optional scope in parentheses: feat(admin): ...
+          requireScope: false
+          # Body and footer are optional
+          subjectPattern: ^[A-Z].+$
+          subjectPatternError: >
+            The subject "{subject}" must start with an uppercase letter.
+            Example: "feat(admin): Add tenant restart button"
+          ignoreLabels: |
+            release
