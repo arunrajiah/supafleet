@@ -158,6 +158,21 @@ Each tenant uses ~250 MB RAM (rest + auth + storage containers). Shared services
 
 ---
 
+## Documentation
+
+| Guide | Audience |
+|---|---|
+| [Getting Started](docs/getting-started.md) | Install on a fresh server, first tenant |
+| [Configuration](docs/configuration.md) | All `.env` variables, `versions.json` reference |
+| [Managing Tenants](docs/managing-tenants.md) | Create, inspect, delete tenants via UI and CLI |
+| [HTTPS Setup](docs/https.md) | Caddy (auto-certs) and Nginx + Certbot |
+| [Backup & Restore](docs/backup-restore.md) | Database dumps, storage backups, migration |
+| [Architecture](docs/architecture.md) | How it works: containers, networking, JWT isolation |
+| [Local Development](docs/local-development.md) | Dev setup, API reference, adding features |
+| [FAQ](docs/faq.md) | Common questions |
+
+---
+
 ## Updating Supabase versions
 
 All service image tags are defined in a single [`versions.json`](versions.json) file at the project root.
