@@ -29,20 +29,21 @@ export class NextResponse {
 export class NextRequest {
   readonly url: string
   readonly headers: Map<string, string>
-  private _body: unknown
+  private _rawBody: string
 
   constructor(
     url: string,
     init?: { body?: string; headers?: Record<string, string>; method?: string },
   ) {
     this.url = url
-    this._body = init?.body ? JSON.parse(init.body) : {}
+    this._rawBody = init?.body ?? '{}'
     this.headers = new Map(
       Object.entries(init?.headers ?? {}).map(([k, v]) => [k.toLowerCase(), v]),
     )
   }
 
+  /** Mirrors the real NextRequest.json() — throws on invalid JSON. */
   async json() {
-    return this._body
+    return JSON.parse(this._rawBody)
   }
 }

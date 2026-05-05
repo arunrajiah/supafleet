@@ -13,13 +13,13 @@ import { _resetStore } from '@/lib/rate-limit'
 const mockReadState  = jest.fn()
 const mockVerify     = jest.fn()
 const mockCreateToken = jest.fn(() => 'tok-abc')
-const mockCookieOpts  = jest.fn(() => ({ name: 'session', value: 'tok-abc' }))
+const mockCookieOpts  = jest.fn((_t?: unknown) => ({ name: 'session', value: 'tok-abc' }))
 
 jest.mock('@/lib/state', () => ({ readState: () => mockReadState() }))
 jest.mock('@/lib/auth', () => ({
-  verifyPassword:       (...args: unknown[]) => mockVerify(...args),
+  verifyPassword:       (p: unknown, h: unknown) => mockVerify(p, h),
   createSessionToken:   () => mockCreateToken(),
-  sessionCookieOptions: (...args: unknown[]) => mockCookieOpts(...args),
+  sessionCookieOptions: (t: unknown) => mockCookieOpts(t),
 }))
 
 // Import the route **after** mocks are in place.

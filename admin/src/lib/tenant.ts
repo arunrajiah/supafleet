@@ -2,7 +2,9 @@ import fs from 'fs'
 import path from 'path'
 import { generateJWT, generateSecret } from './jwt-gen'
 import { createTenantDatabase, dropTenantDatabase, initTenantDatabase, databaseExists } from './db'
-import { startTenantContainers, stopTenantContainers, getTenantStatus, resolveHostPath, reloadNginx, ContainerStatus } from './docker'
+import { startTenantContainers, stopTenantContainers, getTenantStatus, resolveHostPath, reloadNginx, restartTenantContainers, restartSingleTenantContainer, pullLatestImages, ContainerStatus } from './docker'
+
+export { restartTenantContainers, restartSingleTenantContainer }
 import { writeTenantNginxConf, removeTenantNginxConf } from './nginx'
 
 const PROJECT_DIR  = process.env.PROJECT_DIR  ?? '/project'
@@ -107,6 +109,35 @@ export async function createTenant(name: string, siteUrl: string): Promise<Tenan
   await reloadNginx()
 
   return config
+}
+
+/**
+ * Upgrade a tenant's service containers to the image tags in versions.json.
+ *
+ * Sequence:
+ * 1. Force-pull latest images (so the new tags are cached before we remove the old containers)
+ * 2. Stop & remove existing containers
+ * 3. Recreate containers with the new images + the same tenant config
+ */
+export async function upgradeTenant(name: string): Promise<void> {
+  const cfg = readTenantConfig(name)
+  if (!cfg) throw new Error(`Tenant '${name}' not found.`)
+
+  await pullLatestImages()
+  await stopTenantContainers(name)
+
+  const hostStoragePath = await resolveHostPath(`/project/volumes/storage/${name}`)
+  await startTenantContainers({
+    tenantName:     cfg.name,
+    dbName:         cfg.dbName,
+    jwtSecret:      cfg.jwtSecret,
+    anonKey:        cfg.anonKey,
+    serviceRoleKey: cfg.serviceRoleKey,
+    s3Key:          cfg.s3Key,
+    s3Secret:       cfg.s3Secret,
+    siteUrl:        cfg.siteUrl,
+    hostStoragePath,
+  })
 }
 
 export async function deleteTenant(name: string, dropDb: boolean): Promise<void> {

@@ -4,6 +4,7 @@ import path from 'path'
 
 export const docker = new Docker({ socketPath: '/var/run/docker.sock' })
 
+/** Read versions.json fresh on every call so upgrades pick up the latest tags. */
 function loadVersions(): Record<string, string> {
   const p = path.join(process.env.PROJECT_DIR ?? '/project', 'versions.json')
   try {
@@ -13,7 +14,15 @@ function loadVersions(): Record<string, string> {
   }
 }
 
-const versions = loadVersions()
+/** Image tags resolved from versions.json (or built-in defaults). */
+export function resolveImages() {
+  const v = loadVersions()
+  return {
+    auth:    v.gotrue    ?? 'supabase/gotrue:v2.186.0',
+    rest:    v.postgrest ?? 'postgrest/postgrest:v14.8',
+    storage: v.storage   ?? 'supabase/storage-api:v1.48.26',
+  }
+}
 
 const NETWORK = 'supabase-net'
 
@@ -43,17 +52,19 @@ const smtp = () => ({
   autoConfirm:  process.env.ENABLE_EMAIL_AUTOCONFIRM ?? 'false',
 })
 
-async function pullIfMissing(image: string) {
-  try {
-    await docker.getImage(image).inspect()
-  } catch {
-    await new Promise<void>((resolve, reject) => {
-      docker.pull(image, (err: Error | null, stream: NodeJS.ReadableStream) => {
-        if (err) return reject(err)
-        docker.modem.followProgress(stream, (e: Error | null) => e ? reject(e) : resolve())
-      })
-    })
+async function pullImage(image: string, force = false) {
+  if (!force) {
+    try {
+      await docker.getImage(image).inspect()
+      return  // already present
+    } catch { /* fall through to pull */ }
   }
+  await new Promise<void>((resolve, reject) => {
+    docker.pull(image, (err: Error | null, stream: NodeJS.ReadableStream) => {
+      if (err) return reject(err)
+      docker.modem.followProgress(stream, (e: Error | null) => e ? reject(e) : resolve())
+    })
+  })
 }
 
 async function startContainer(opts: Docker.ContainerCreateOptions): Promise<Docker.Container> {
@@ -65,21 +76,18 @@ async function startContainer(opts: Docker.ContainerCreateOptions): Promise<Dock
 export async function startTenantContainers(cfg: TenantContainerConfig): Promise<void> {
   const { tenantName: n, dbName, jwtSecret, anonKey, serviceRoleKey, s3Key, s3Secret, siteUrl, hostStoragePath } = cfg
   const s = smtp()
-
-  const imgAuth    = versions.gotrue    ?? 'supabase/gotrue:v2.186.0'
-  const imgRest    = versions.postgrest ?? 'postgrest/postgrest:v14.8'
-  const imgStorage = versions.storage   ?? 'supabase/storage-api:v1.48.26'
+  const imgs = resolveImages()
 
   await Promise.all([
-    pullIfMissing(imgAuth),
-    pullIfMissing(imgRest),
-    pullIfMissing(imgStorage),
+    pullImage(imgs.auth),
+    pullImage(imgs.rest),
+    pullImage(imgs.storage),
   ])
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   await startContainer({
     name: `auth-${n}`,
-    Image: imgAuth,
+    Image: imgs.auth,
     Env: [
       'GOTRUE_API_HOST=0.0.0.0',
       'GOTRUE_API_PORT=9999',
@@ -118,7 +126,7 @@ export async function startTenantContainers(cfg: TenantContainerConfig): Promise
   // ── REST ──────────────────────────────────────────────────────────────────
   await startContainer({
     name: `rest-${n}`,
-    Image: imgRest,
+    Image: imgs.rest,
     Cmd: ['postgrest'],
     Env: [
       `PGRST_DB_URI=postgres://authenticator:${pgPass()}@${pgHost()}:${pgPort()}/${dbName}`,
@@ -138,7 +146,7 @@ export async function startTenantContainers(cfg: TenantContainerConfig): Promise
   // ── Storage ───────────────────────────────────────────────────────────────
   await startContainer({
     name: `storage-${n}`,
-    Image: imgStorage,
+    Image: imgs.storage,
     Env: [
       `ANON_KEY=${anonKey}`,
       `SERVICE_KEY=${serviceRoleKey}`,
@@ -177,10 +185,48 @@ export async function stopTenantContainers(tenantName: string): Promise<void> {
   }
 }
 
+/**
+ * Restart all three tenant containers in-place (no image change).
+ * Much faster than a full upgrade — just signals Docker to restart each one.
+ */
+export async function restartTenantContainers(tenantName: string): Promise<void> {
+  for (const prefix of ['auth', 'rest', 'storage']) {
+    try {
+      await docker.getContainer(`${prefix}-${tenantName}`).restart({ t: 10 })
+    } catch { /* container missing or already restarting — skip */ }
+  }
+}
+
+/**
+ * Restart a single service container for a tenant.
+ * `service` must be one of: 'auth' | 'rest' | 'storage'.
+ */
+export async function restartSingleTenantContainer(
+  tenantName: string,
+  service: 'auth' | 'rest' | 'storage',
+): Promise<void> {
+  await docker.getContainer(`${service}-${tenantName}`).restart({ t: 10 })
+}
+
+/**
+ * Force-pull the latest images from versions.json then return the resolved tags.
+ * Used by the upgrade flow before recreating containers.
+ */
+export async function pullLatestImages(): Promise<ReturnType<typeof resolveImages>> {
+  const imgs = resolveImages()
+  await Promise.all([
+    pullImage(imgs.auth,    true),
+    pullImage(imgs.rest,    true),
+    pullImage(imgs.storage, true),
+  ])
+  return imgs
+}
+
 export interface ContainerStatus {
   name:   string
   status: 'running' | 'stopped' | 'error' | 'missing'
   health?: string
+  image?: string
 }
 
 export async function getTenantStatus(tenantName: string): Promise<ContainerStatus[]> {
@@ -190,9 +236,10 @@ export async function getTenantStatus(tenantName: string): Promise<ContainerStat
     try {
       const info = await docker.getContainer(name).inspect()
       results.push({
-        name: prefix,
-        status:  info.State.Running ? 'running' : 'stopped',
-        health:  info.State.Health?.Status,
+        name:   prefix,
+        status: info.State.Running ? 'running' : 'stopped',
+        health: info.State.Health?.Status,
+        image:  info.Config.Image,
       })
     } catch {
       results.push({ name: prefix, status: 'missing' })

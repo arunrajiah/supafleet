@@ -7,6 +7,7 @@ import Shell from '@/components/Shell'
 import StatusDot from '@/components/StatusDot'
 import CopyButton from '@/components/CopyButton'
 import DeleteTenantButton from './DeleteTenantButton'
+import ContainerActions from './ContainerActions'
 
 type Props = { params: Promise<{ name: string }> }
 
@@ -58,10 +59,10 @@ export default async function TenantPage({ params }: Props) {
           </div>
         </div>
 
-        {/* Container status */}
+        {/* Container status + actions */}
         <section className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-6">
           <h2 className="text-sm font-semibold text-gray-300 mb-4">Services</h2>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-4 mb-6">
             {containers.map((c) => (
               <div key={c.name} className="bg-gray-950 border border-gray-800 rounded-lg px-4 py-3 text-center">
                 <p className="text-xs text-gray-400 mb-2 capitalize">{c.name}</p>
@@ -69,8 +70,21 @@ export default async function TenantPage({ params }: Props) {
                 {c.health && (
                   <p className="text-xs text-gray-600 mt-1">{c.health}</p>
                 )}
+                {c.image && (
+                  <p className="text-xs text-gray-700 mt-1 font-mono truncate" title={c.image}>
+                    {c.image.split(':')[1] ?? c.image}
+                  </p>
+                )}
               </div>
             ))}
+          </div>
+
+          <div className="border-t border-gray-800 pt-5">
+            <h3 className="text-xs font-semibold text-gray-400 mb-4 uppercase tracking-wide">Actions</h3>
+            <ContainerActions
+              tenantName={cfg.name}
+              hasUnhealthy={containers.some(c => c.status !== 'running')}
+            />
           </div>
         </section>
 
