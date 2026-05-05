@@ -38,7 +38,9 @@ jobs:
         run: sudo apt-get install -y shellcheck
 
       - name: Run shellcheck
-        run: shellcheck -x scripts/*.sh
+        # --severity=warning: SC1091 (can't follow dynamic source paths) is
+        # "info" level — only fail on real warnings/errors
+        run: shellcheck -x --severity=warning scripts/*.sh
 
   validate-compose:
     name: Validate docker-compose
