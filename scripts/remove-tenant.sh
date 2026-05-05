@@ -40,6 +40,7 @@ rm -rf "$TENANT_DIR"
 
 if $DROP_DB; then
   echo "WARNING: Dropping database '$TENANT_DB'..."
+  # shellcheck source=/dev/null
   set -a; source "$PROJECT_DIR/.env"; set +a
   docker compose -f "$PROJECT_DIR/docker-compose.yml" exec -T db \
     psql -U postgres -c "DROP DATABASE IF EXISTS \"$TENANT_DB\";"

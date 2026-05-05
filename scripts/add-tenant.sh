@@ -22,6 +22,7 @@ if [[ ! -f "$PROJECT_DIR/.env" ]]; then
   echo "Error: $PROJECT_DIR/.env not found. Copy .env.example to .env first."
   exit 1
 fi
+# shellcheck source=/dev/null
 set -a; source "$PROJECT_DIR/.env"; set +a
 
 # ── Image versions from versions.json ────────────────────────────────────────
