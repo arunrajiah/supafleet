@@ -1,0 +1,24 @@
+# Environment — never commit real secrets
+.env
+
+# Runtime data
+volumes/db/data/
+volumes/storage/*/
+!volumes/storage/.gitkeep
+tenants/*/
+!tenants/.gitkeep
+.multidb/
+
+# Generated nginx tenant configs
+nginx/conf.d/*.conf
+!nginx/conf.d/.gitkeep
+
+# Admin UI build artifacts
+admin/node_modules/
+admin/.next/
+
+# OS / editors
+.DS_Store
+*.swp
+*.swo
+

@@ -1,0 +1,120 @@
+name: supabase-multidb
+
+# Shared infrastructure — one per droplet
+# Per-tenant services are provisioned by: scripts/add-tenant.sh <name>
+
+x-restart: &restart
+  restart: unless-stopped
+
+services:
+
+  db:
+    container_name: supabase-db
+    image: supabase/postgres:15.8.1.085
+    <<: *restart
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - ./volumes/db/data:/var/lib/postgresql/data:Z
+      - ./volumes/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:Z
+      - ./volumes/db/webhooks.sql:/docker-entrypoint-initdb.d/init-scripts/98-webhooks.sql:Z
+      - ./volumes/db/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:Z
+      - ./volumes/db/jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql:Z
+      - ./volumes/db/logs.sql:/docker-entrypoint-initdb.d/migrations/99-logs.sql:Z
+      - ./volumes/db/pooler.sql:/docker-entrypoint-initdb.d/migrations/99-pooler.sql:Z
+      - db-config:/etc/postgresql-custom
+    environment:
+      POSTGRES_HOST: /var/run/postgresql
+      PGPORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: postgres
+      POSTGRES_DB: postgres
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXP: ${JWT_EXPIRY:-3600}
+    command:
+      [
+        "postgres",
+        "-c", "config_file=/etc/postgresql/postgresql.conf",
+        "-c", "log_min_messages=fatal"
+      ]
+    networks:
+      - supabase-net
+
+  imgproxy:
+    container_name: supabase-imgproxy
+    image: darthsim/imgproxy:v3.30.1
+    <<: *restart
+    healthcheck:
+      test: ["CMD", "imgproxy", "health"]
+      timeout: 5s
+      interval: 5s
+      retries: 3
+    environment:
+      IMGPROXY_BIND: ":5001"
+      IMGPROXY_LOCAL_FILESYSTEM_ROOT: /
+      IMGPROXY_USE_ETAG: "true"
+      IMGPROXY_AUTO_WEBP: "true"
+      IMGPROXY_MAX_SRC_RESOLUTION: 16.8
+    volumes:
+      - ./volumes/storage:/var/lib/storage:z
+    networks:
+      - supabase-net
+
+  admin:
+    container_name: supabase-admin
+    build: ./admin
+    <<: *restart
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - .:/project
+    environment:
+      PROJECT_DIR:               /project
+      CONTAINER_NAME:            supabase-admin
+      POSTGRES_HOST:             db
+      POSTGRES_PORT:             ${POSTGRES_PORT:-5432}
+      POSTGRES_PASSWORD:         ${POSTGRES_PASSWORD}
+      DOMAIN:                    ${DOMAIN}
+      JWT_EXPIRY:                ${JWT_EXPIRY:-3600}
+      SMTP_HOST:                 ${SMTP_HOST:-}
+      SMTP_PORT:                 ${SMTP_PORT:-587}
+      SMTP_USER:                 ${SMTP_USER:-}
+      SMTP_PASS:                 ${SMTP_PASS:-}
+      SMTP_ADMIN_EMAIL:          ${SMTP_ADMIN_EMAIL:-admin@example.com}
+      SMTP_SENDER_NAME:          ${SMTP_SENDER_NAME:-Supabase}
+      ENABLE_EMAIL_AUTOCONFIRM:  ${ENABLE_EMAIL_AUTOCONFIRM:-false}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - supabase-net
+
+  nginx:
+    container_name: supabase-nginx
+    image: nginx:alpine
+    <<: *restart
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      admin:
+        condition: service_started
+    networks:
+      - supabase-net
+
+networks:
+  supabase-net:
+    name: supabase-net
+    driver: bridge
+
+volumes:
+  db-config:
