@@ -1,0 +1,25 @@
+supafleet
+Copyright 2025 Arun Rajiah
+
+This product includes software developed by Supabase, Inc. and contributors
+as part of the supabase/supabase project (https://github.com/supabase/supabase),
+licensed under the Apache License, Version 2.0.
+
+The following files were taken from or are substantially derived from
+supabase/supabase and are reproduced here under the terms of that license:
+
+  volumes/db/jwt.sql
+  volumes/db/roles.sql
+  volumes/db/webhooks.sql
+  volumes/db/logs.sql
+  volumes/db/pooler.sql
+  volumes/db/realtime.sql
+
+Modifications made to these files (if any) are described in the git history
+of this repository.
+
+The Apache License 2.0 is available at:
+  https://www.apache.org/licenses/LICENSE-2.0
+
+All other files in this repository are Copyright 2025 Arun Rajiah and are
+licensed under the MIT License (see LICENSE).

@@ -1,0 +1,44 @@
+name: Upstream sync check
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # Every Monday at 06:00 UTC
+  workflow_dispatch:
+
+jobs:
+  check-upstream:
+    name: Diff init SQL against supabase/supabase
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch upstream init SQL files
+        id: fetch
+        run: |
+          BASE="https://raw.githubusercontent.com/supabase/supabase/master/docker/volumes/db"
+          FILES="jwt.sql roles.sql webhooks.sql logs.sql pooler.sql realtime.sql"
+          changed=""
+          for f in $FILES; do
+            curl -fsSL "$BASE/$f" -o "/tmp/upstream_$f"
+            if ! diff -q "volumes/db/$f" "/tmp/upstream_$f" > /dev/null 2>&1; then
+              changed="$changed $f"
+            fi
+          done
+          echo "changed=${changed# }" >> "$GITHUB_OUTPUT"
+
+      - name: Open issue if files have diverged
+        if: steps.fetch.outputs.changed != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CHANGED: ${{ steps.fetch.outputs.changed }}
+        run: |
+          TITLE="chore: upstream init SQL has changed (${{ github.run_id }})"
+          BODY="The following \`volumes/db/\` files differ from [\`supabase/supabase\`](https://github.com/supabase/supabase/tree/master/docker/volumes/db):\n\n$(for f in $CHANGED; do echo "- \`$f\`"; done)\n\nPlease review the upstream diff and apply any relevant changes.\n\nTriggered by the weekly upstream-sync check."
+          # Only open if no open issue with same title prefix already exists
+          existing=$(gh issue list --state open --label "upstream-sync" --json number --jq length)
+          if [[ "$existing" == "0" ]]; then
+            gh issue create \
+              --title "$TITLE" \
+              --body "$(printf '%b' "$BODY")" \
+              --label "upstream-sync"
+          fi

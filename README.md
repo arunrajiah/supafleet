@@ -1,4 +1,4 @@
-# supabase-multidb
+# supafleet
 
 > Self-host **multiple isolated Supabase projects** on a single server — each with its own PostgreSQL database, Auth, REST API, and Storage — managed from a web UI.
 
@@ -12,7 +12,7 @@
 
 The official Supabase self-hosted setup gives you **one database per server**. If you want to host multiple apps or give different users their own isolated Supabase instance, you'd normally need a separate VM for each.
 
-`supabase-multidb` lets you run **N isolated tenants on one droplet** — each tenant gets:
+`supafleet` lets you run **N isolated tenants on one droplet** — each tenant gets:
 
 - A dedicated **PostgreSQL database** (inside a shared Postgres instance)
 - Its own **JWT secret** (no cross-tenant token reuse)
@@ -58,8 +58,8 @@ A **$12/mo DigitalOcean droplet** (2 vCPU / 4 GB RAM) comfortably handles ~14 te
 
 ```bash
 # 1. Clone
-git clone https://github.com/arunrajiah/supabase-multidb.git
-cd supabase-multidb
+git clone https://github.com/arunrajiah/supafleet.git
+cd supafleet
 
 # 2. Configure
 cp .env.example .env
@@ -160,8 +160,10 @@ Each tenant uses ~250 MB RAM (rest + auth + storage containers). Shared services
 
 ## Updating Supabase versions
 
-Service versions are defined in `scripts/add-tenant.sh` (CLI) and `admin/src/lib/docker.ts` (UI).
-Update the image tags to upgrade — existing tenants are unaffected until their containers are recreated.
+All service image tags are defined in a single [`versions.json`](versions.json) file at the project root.
+Update the tags there to upgrade — existing tenants are unaffected until their containers are recreated.
+
+[Renovate](https://docs.renovatebot.com/) is pre-configured (`.github/renovate.json`) to open automated PRs when new image versions are released.
 
 ---
 
@@ -189,6 +191,23 @@ Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines
 ## Security
 
 Found a vulnerability? Please report it privately — see [SECURITY.md](SECURITY.md).
+
+---
+
+## Attribution
+
+Portions of this project are derived from [supabase/supabase](https://github.com/supabase/supabase),
+Copyright © Supabase, Inc., licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+
+Files derived from that project:
+- `volumes/db/jwt.sql`
+- `volumes/db/roles.sql`
+- `volumes/db/webhooks.sql`
+- `volumes/db/logs.sql`
+- `volumes/db/pooler.sql`
+- `volumes/db/realtime.sql`
+
+See [NOTICE](NOTICE) for full attribution details.
 
 ---
 

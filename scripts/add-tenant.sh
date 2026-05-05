@@ -24,6 +24,12 @@ if [[ ! -f "$PROJECT_DIR/.env" ]]; then
 fi
 set -a; source "$PROJECT_DIR/.env"; set +a
 
+# ── Image versions from versions.json ────────────────────────────────────────
+_v() { python3 -c "import json,sys; d=json.load(open('$PROJECT_DIR/versions.json')); print(d.get('$1','$2'))"; }
+IMG_AUTH=$(_v gotrue "supabase/gotrue:v2.186.0")
+IMG_REST=$(_v postgrest "postgrest/postgrest:v14.8")
+IMG_STORAGE=$(_v storage "supabase/storage-api:v1.48.26")
+
 # ── Args ─────────────────────────────────────────────────────────────────────
 TENANT_NAME="${1:-}"
 if [[ -z "$TENANT_NAME" ]]; then
@@ -113,7 +119,7 @@ services:
 
   auth:
     container_name: auth-${TENANT_NAME}
-    image: supabase/gotrue:v2.186.0
+    image: ${IMG_AUTH}
     <<: *restart
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9999/health"]
@@ -153,7 +159,7 @@ services:
 
   rest:
     container_name: rest-${TENANT_NAME}
-    image: postgrest/postgrest:v14.8
+    image: ${IMG_REST}
     <<: *restart
     depends_on:
       auth:
@@ -172,7 +178,7 @@ services:
 
   storage:
     container_name: storage-${TENANT_NAME}
-    image: supabase/storage-api:v1.48.26
+    image: ${IMG_STORAGE}
     <<: *restart
     depends_on:
       auth:

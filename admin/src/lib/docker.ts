@@ -1,6 +1,19 @@
 import Docker from 'dockerode'
+import fs from 'fs'
+import path from 'path'
 
 export const docker = new Docker({ socketPath: '/var/run/docker.sock' })
+
+function loadVersions(): Record<string, string> {
+  const p = path.join(process.env.PROJECT_DIR ?? '/project', 'versions.json')
+  try {
+    return JSON.parse(fs.readFileSync(p, 'utf8'))
+  } catch {
+    return {}
+  }
+}
+
+const versions = loadVersions()
 
 const NETWORK = 'supabase-net'
 
@@ -53,16 +66,20 @@ export async function startTenantContainers(cfg: TenantContainerConfig): Promise
   const { tenantName: n, dbName, jwtSecret, anonKey, serviceRoleKey, s3Key, s3Secret, siteUrl, hostStoragePath } = cfg
   const s = smtp()
 
+  const imgAuth    = versions.gotrue    ?? 'supabase/gotrue:v2.186.0'
+  const imgRest    = versions.postgrest ?? 'postgrest/postgrest:v14.8'
+  const imgStorage = versions.storage   ?? 'supabase/storage-api:v1.48.26'
+
   await Promise.all([
-    pullIfMissing('supabase/gotrue:v2.186.0'),
-    pullIfMissing('postgrest/postgrest:v14.8'),
-    pullIfMissing('supabase/storage-api:v1.48.26'),
+    pullIfMissing(imgAuth),
+    pullIfMissing(imgRest),
+    pullIfMissing(imgStorage),
   ])
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   await startContainer({
     name: `auth-${n}`,
-    Image: 'supabase/gotrue:v2.186.0',
+    Image: imgAuth,
     Env: [
       'GOTRUE_API_HOST=0.0.0.0',
       'GOTRUE_API_PORT=9999',
@@ -101,7 +118,7 @@ export async function startTenantContainers(cfg: TenantContainerConfig): Promise
   // ── REST ──────────────────────────────────────────────────────────────────
   await startContainer({
     name: `rest-${n}`,
-    Image: 'postgrest/postgrest:v14.8',
+    Image: imgRest,
     Cmd: ['postgrest'],
     Env: [
       `PGRST_DB_URI=postgres://authenticator:${pgPass()}@${pgHost()}:${pgPort()}/${dbName}`,
@@ -121,7 +138,7 @@ export async function startTenantContainers(cfg: TenantContainerConfig): Promise
   // ── Storage ───────────────────────────────────────────────────────────────
   await startContainer({
     name: `storage-${n}`,
-    Image: 'supabase/storage-api:v1.48.26',
+    Image: imgStorage,
     Env: [
       `ANON_KEY=${anonKey}`,
       `SERVICE_KEY=${serviceRoleKey}`,

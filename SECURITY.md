@@ -10,7 +10,7 @@
 
 **Please do not report security vulnerabilities through public GitHub issues.**
 
-To report a vulnerability, open a [GitHub Security Advisory](https://github.com/arunrajiah/supabase-multidb/security/advisories/new) (private by default). Include:
+To report a vulnerability, open a [GitHub Security Advisory](https://github.com/arunrajiah/supafleet/security/advisories/new) (private by default). Include:
 
 1. A description of the vulnerability
 2. Steps to reproduce

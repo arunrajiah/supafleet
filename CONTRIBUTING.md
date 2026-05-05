@@ -1,4 +1,4 @@
-# Contributing to supabase-multidb
+# Contributing to supafleet
 
 Thank you for taking the time to contribute! This document covers everything you need to get started.
 
@@ -33,8 +33,8 @@ By participating you agree to uphold it.
 ### Clone and install
 
 ```bash
-git clone https://github.com/arunrajiah/supabase-multidb.git
-cd supabase-multidb
+git clone https://github.com/arunrajiah/supafleet.git
+cd supafleet
 
 # Install admin UI dependencies
 cd admin && npm install && cd ..
@@ -108,7 +108,7 @@ docs: add HTTPS setup guide
 ## Project structure
 
 ```
-supabase-multidb/
+supafleet/
 ├── admin/              # Next.js management UI
 │   ├── src/
 │   │   ├── app/        # Pages and API routes
@@ -137,4 +137,5 @@ Please use the [bug report template](.github/ISSUE_TEMPLATE/bug_report.md) and i
 
 ## Questions?
 
-Open a [discussion](https://github.com/arunrajiah/supabase-multidb/discussions) — issues are for bugs and feature requests only.
+Open a [discussion](https://github.com/arunrajiah/supafleet/discussions) — issues are for bugs and feature requests only.
+
