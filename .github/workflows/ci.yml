@@ -28,6 +28,9 @@ jobs:
       - name: Type-check
         run: npx tsc --noEmit
 
+      - name: Run tests
+        run: npm test
+
   validate-shell:
     name: Validate shell scripts
     runs-on: ubuntu-latest

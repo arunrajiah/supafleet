@@ -77,6 +77,12 @@ dev: ## Run admin UI in hot-reload dev mode (stops the container first)
 	  CONTAINER_NAME=supabase-admin \
 	  npm run dev
 
+test: ## Run the admin UI test suite
+	cd admin && npm test
+
+test-coverage: ## Run tests with coverage report
+	cd admin && npm run test:coverage
+
 lint: ## Run all linters
 	cd admin && npx tsc --noEmit
 	shellcheck -x --severity=warning scripts/*.sh

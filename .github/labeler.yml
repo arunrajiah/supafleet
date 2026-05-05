@@ -36,6 +36,13 @@
   - changed-files:
     - any-glob-to-any-file: ".github/**"
 
+"tests":
+  - changed-files:
+    - any-glob-to-any-file:
+      - "admin/__tests__/**"
+      - "admin/__mocks__/**"
+      - "admin/jest.config.*"
+
 "dependencies":
   - changed-files:
     - any-glob-to-any-file:
