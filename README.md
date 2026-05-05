@@ -12,7 +12,7 @@
 
 The official Supabase self-hosted setup gives you **one database per server**. If you want to host multiple apps or give different users their own isolated Supabase instance, you'd normally need a separate VM for each.
 
-`supafleet` lets you run **N isolated tenants on one droplet** — each tenant gets:
+`supafleet` lets you run **N isolated tenants on one server** — each tenant gets:
 
 - A dedicated **PostgreSQL database** (inside a shared Postgres instance)
 - Its own **JWT secret** (no cross-tenant token reuse)
@@ -26,7 +26,7 @@ Everything is managed from a **web UI** — no SSH required after the first `doc
 ## Architecture
 
 ```
-One server / droplet
+One server
 │
 ├── supabase-db        (PostgreSQL — all tenant databases live here)
 ├── supabase-imgproxy  (shared image processing)
@@ -50,7 +50,7 @@ Each tenant is a separate Docker Compose stack joined to a shared Docker network
 | Docker Compose | v2 |
 | Python 3 | (for CLI scripts only) |
 
-A **$12/mo DigitalOcean droplet** (2 vCPU / 4 GB RAM) comfortably handles ~14 tenants. Upsize for more.
+A **2 vCPU / 4 GB RAM** server comfortably handles ~14 tenants. Upsize for more.
 
 ---
 
@@ -148,11 +148,11 @@ const supabase = createClient(
 
 ## Capacity planning
 
-| Droplet | RAM | Tenants |
+| Server | RAM | Tenants |
 |---|---|---|
-| Basic 2 GB | 2 GB | ~6 |
-| Basic 4 GB | 4 GB | ~14 |
-| General 8 GB | 8 GB | ~30 |
+| 2 vCPU / 2 GB | 2 GB | ~6 |
+| 2 vCPU / 4 GB | 4 GB | ~14 |
+| 4 vCPU / 8 GB | 8 GB | ~30 |
 
 Each tenant uses ~250 MB RAM (rest + auth + storage containers). Shared services use ~300 MB base.
 

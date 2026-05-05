@@ -1,6 +1,6 @@
 # Getting Started
 
-This guide walks you through installing supafleet on a fresh server (DigitalOcean droplet, AWS EC2, VPS, etc.) and creating your first tenant database.
+This guide walks you through installing supafleet on any Linux server — a VPS, a cloud VM (AWS EC2, Google Cloud, Hetzner, Linode, etc.), a bare-metal machine, or a local VM — and creating your first tenant database.
 
 ---
 

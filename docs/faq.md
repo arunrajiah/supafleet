@@ -40,13 +40,13 @@ All standard Supabase features work: auth, database queries, storage, realtime (
 
 ### What's the minimum server size?
 
-A **$12/mo DigitalOcean droplet** (2 vCPU / 4 GB RAM) comfortably handles ~14 tenants.
+A **2 vCPU / 4 GB RAM** server comfortably handles ~14 tenants.
 
-| Droplet | RAM | ~Max tenants |
+| Server | RAM | ~Max tenants |
 |---|---|---|
-| Basic 2 GB | 2 GB | ~6 |
-| Basic 4 GB | 4 GB | ~14 |
-| General 8 GB | 8 GB | ~30 |
+| 2 vCPU / 2 GB | 2 GB | ~6 |
+| 2 vCPU / 4 GB | 4 GB | ~14 |
+| 4 vCPU / 8 GB | 8 GB | ~30 |
 
 Each tenant uses ~250 MB RAM. Shared services use ~300 MB base.
 
