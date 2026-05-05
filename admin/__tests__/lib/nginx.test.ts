@@ -74,6 +74,26 @@ describe('writeTenantNginxConf', () => {
     expect(content).toContain('server_name client-two.acme.io')
     expect(content).toContain('http://rest-client-two:3000')
   })
+
+  // Security-header assertions
+  it('includes X-Content-Type-Options header', () => {
+    writeTenantNginxConf('myapp', 'example.com')
+    const [, content] = (mockFs.writeFileSync as jest.Mock).mock.calls[0] as [string, string]
+    expect(content).toContain('X-Content-Type-Options')
+    expect(content).toContain('nosniff')
+  })
+
+  it('includes X-Frame-Options header', () => {
+    writeTenantNginxConf('myapp', 'example.com')
+    const [, content] = (mockFs.writeFileSync as jest.Mock).mock.calls[0] as [string, string]
+    expect(content).toContain('X-Frame-Options')
+  })
+
+  it('includes Content-Security-Policy header', () => {
+    writeTenantNginxConf('myapp', 'example.com')
+    const [, content] = (mockFs.writeFileSync as jest.Mock).mock.calls[0] as [string, string]
+    expect(content).toContain('Content-Security-Policy')
+  })
 })
 
 // ── removeTenantNginxConf ─────────────────────────────────────────────────────
