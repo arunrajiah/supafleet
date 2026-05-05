@@ -78,6 +78,10 @@ All Docker image tags are centralised in `versions.json` at the project root:
 
 To upgrade a service, change the tag here. Existing running tenant containers are **not** affected until they are recreated.
 
+The tags in this file are read **at runtime** — every call to create or upgrade a tenant picks up the current contents of `versions.json`. There is no need to restart the admin container after editing this file.
+
+The admin UI's **Upgrade services** action reads from this file, force-pulls the specified images, and recreates the tenant's containers in one click.
+
 [Renovate](https://docs.renovatebot.com/) is pre-configured to open automated PRs when new image versions are released.
 
 ---

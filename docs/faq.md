@@ -94,7 +94,11 @@ Yes — see [Backup & Restore: Migrating to a new server](backup-restore.md#migr
 
 ### Is the admin UI exposed to the internet?
 
-Yes, by default — it's the default vhost on port 80. It's protected by a password, but you should put it behind HTTPS for production. See the [HTTPS guide](https.md).
+Yes, by default — it's the default vhost on port 80. It is protected by a password **and** a login rate limiter (5 failed attempts per IP per 15 minutes), but you should also put it behind HTTPS for production. See the [HTTPS guide](https.md).
+
+### What happens if someone tries to brute-force the admin password?
+
+The login endpoint (`POST /api/auth/login`) enforces a sliding-window rate limit. After 5 consecutive failed attempts from the same IP within a 15-minute window, subsequent requests receive an HTTP 429 response with a `Retry-After` header. The counter resets automatically after the window expires, or immediately upon a successful login. This is handled in-process — no external rate-limiting infrastructure is required.
 
 ### Why does the admin container need the Docker socket?
 
@@ -114,16 +118,25 @@ This is not yet supported in the UI. Rotating the secret invalidates all existin
 
 ### How do I upgrade Supabase component versions?
 
-Update the image tags in `versions.json`. New tenants will use the new images. Existing containers continue running the old images until recreated.
+Update the image tags in `versions.json`, then upgrade each tenant via the **web UI** or CLI.
 
-To recreate all tenant containers:
+**Web UI (recommended):**
+1. Edit `versions.json` with the new tags (or merge a Renovate PR)
+2. For each tenant: open the detail page → **Services → Actions → ↑ Upgrade services**
+
+The upgrade pulls the new images, stops the old containers, and recreates them. The database and storage files are untouched.
+
+**CLI (batch):**
 ```bash
 for name in tenants/*/; do
   name=$(basename "$name")
   [[ "$name" == ".gitkeep" ]] && continue
-  docker restart "auth-$name" "rest-$name" "storage-$name"
+  docker rm -f "auth-$name" "rest-$name" "storage-$name" 2>/dev/null || true
 done
+# Containers are recreated automatically by `restart: unless-stopped` on next `docker compose up`
 ```
+
+New tenants provisioned after `versions.json` is updated will always use the new images.
 
 ### How do I update supafleet itself?
 

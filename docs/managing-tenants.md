@@ -35,11 +35,12 @@ Provisioning takes 15–30 seconds. You'll be redirected to the tenant detail pa
 
 Click any tenant on the dashboard. The detail page shows:
 
-- **API URL** — the base URL for client libraries
+- **Services** — live status tiles for `auth`, `rest`, and `storage` containers, including the running image version tag.  The **Actions** panel below lets you restart individual services or upgrade all containers to the latest images.
+- **API endpoints** — REST, Auth, Storage, and GraphQL URLs
 - **Anon key** — public key for browser/mobile clients
 - **Service role key** — privileged key for server-side code (keep secret)
 - **Database name** — PostgreSQL database name (`tenant_<name>`)
-- **Container status** — live status of the `auth`, `rest`, `storage` containers
+- **Quick start** — copy-ready `createClient` snippet
 
 ### CLI
 
@@ -116,20 +117,61 @@ When `--drop-db` is **not** passed, the PostgreSQL database (`tenant_myapp`) is 
 
 ## Restarting tenant containers
 
-Containers restart automatically (`restart: unless-stopped`). To manually restart:
+Containers restart automatically on crash (`restart: unless-stopped`). To manually restart:
+
+### Web UI
+
+1. Open the tenant detail page
+2. Scroll to the **Services** section — the **Actions** panel is below the status tiles
+3. Choose one of:
+   - **Restart all** — restarts the `auth`, `rest`, and `storage` containers in one click.  
+     The button is highlighted amber when any container is not running.
+   - **Restart Auth / REST / Storage** — restarts a single service without touching the others.
+
+A spinner appears during the operation; a green ✓ confirms success. The page refreshes automatically once Docker has settled.
+
+### CLI
 
 ```bash
 docker restart auth-myapp rest-myapp storage-myapp
 ```
 
-Or stop and start via Compose:
+---
+
+## Upgrading service images
+
+When a new version of GoTrue, PostgREST, or the Storage API is released, you can upgrade a tenant's containers without touching its database or storage files.
+
+### Web UI
+
+1. Update the image tags in [`versions.json`](../versions.json) at the repo root (or wait for a Renovate PR to land)
+2. Open the tenant detail page → **Services → Actions**
+3. Click **↑ Upgrade services**
+
+The admin UI will:
+1. Force-pull the new images defined in `versions.json`
+2. Stop and remove the old containers
+3. Recreate them with the new images and the same credentials
+
+Data is preserved — the PostgreSQL database and storage files are never modified during an upgrade.
+
+### CLI (batch upgrade all tenants)
 
 ```bash
-docker compose \
-  -f tenants/myapp/docker-compose.yml \
-  --project-name supabase-tenant-myapp \
-  restart
+# Pull new images first
+docker pull supabase/gotrue:NEW_TAG
+docker pull postgrest/postgrest:NEW_TAG
+docker pull supabase/storage-api:NEW_TAG
+
+# Recreate containers for each tenant
+for name in tenants/*/; do
+  name=$(basename "$name")
+  docker rm -f "auth-$name" "rest-$name" "storage-$name" 2>/dev/null || true
+done
+# Then re-provision via the UI or run add-tenant.sh for each tenant
 ```
+
+> **Tip:** A safer approach for bulk upgrades is to use the UI one tenant at a time so you can verify each one before proceeding.
 
 ---
 

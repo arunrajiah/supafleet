@@ -88,6 +88,7 @@ After `docker compose up`, open `http://your-server-ip` in a browser.
 | **Dashboard** | List all tenant databases with live container status |
 | **New database** | Name your tenant, optionally override the site URL |
 | **Tenant detail** | Copy API keys, endpoints, quick-start snippet; delete |
+| **Container actions** | Restart individual services or upgrade containers to latest images — no SSH needed |
 
 ---
 
@@ -177,7 +178,12 @@ Each tenant uses ~250 MB RAM (rest + auth + storage containers). Shared services
 ## Updating Supabase versions
 
 All service image tags are defined in a single [`versions.json`](versions.json) file at the project root.
-Update the tags there to upgrade — existing tenants are unaffected until their containers are recreated.
+
+To upgrade a tenant's containers to new image versions:
+1. Update the tags in `versions.json` (or merge a Renovate PR — it opens these automatically)
+2. Open the tenant's detail page in the admin UI → **Services → Actions → ↑ Upgrade services**
+
+The upgrade pulls the new images, stops the old containers, and recreates them. Data is never touched.
 
 [Renovate](https://docs.renovatebot.com/) is pre-configured (`.github/renovate.json`) to open automated PRs when new image versions are released.
 

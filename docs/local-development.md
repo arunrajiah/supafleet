@@ -25,13 +25,14 @@ supafleet/
 │   │   │   └── tenants/    # Tenant list and detail pages
 │   │   ├── components/     # Shared React components
 │   │   └── lib/            # Backend logic
-│   │       ├── auth.ts     # Session cookies, password hashing
-│   │       ├── db.ts       # PostgreSQL queries (node-postgres)
-│   │       ├── docker.ts   # Docker API client (dockerode)
-│   │       ├── jwt-gen.ts  # JWT generation for tenant keys
-│   │       ├── nginx.ts    # nginx config file writing
-│   │       ├── state.ts    # Admin UI state file (.multidb/state.json)
-│   │       └── tenant.ts   # Tenant lifecycle orchestration
+│   │       ├── auth.ts       # Session cookies, password hashing
+│   │       ├── db.ts         # PostgreSQL queries (node-postgres)
+│   │       ├── docker.ts     # Docker API client (dockerode)
+│   │       ├── jwt-gen.ts    # JWT generation for tenant keys
+│   │       ├── nginx.ts      # nginx config file writing
+│   │       ├── rate-limit.ts # In-memory sliding-window rate limiter
+│   │       ├── state.ts      # Admin UI state file (.multidb/state.json)
+│   │       └── tenant.ts     # Tenant lifecycle orchestration
 │   ├── Dockerfile
 │   └── package.json
 ├── scripts/                # CLI shell scripts
@@ -149,10 +150,12 @@ All tenant API routes require a valid session cookie (`smdb_session`). The setup
 | `POST` | `/api/setup` | Public | First-run: set admin password, create session |
 | `POST` | `/api/auth/login` | Public | Verify password, create session cookie |
 | `POST` | `/api/auth/logout` | — | Clear session cookie |
+| `GET` | `/api/health` | Public | Liveness probe (`{ ok: true }`) |
 | `GET` | `/api/tenants` | Required | List all tenants |
 | `POST` | `/api/tenants` | Required | Create a new tenant |
 | `GET` | `/api/tenants/:name` | Required | Get tenant config + container status |
 | `DELETE` | `/api/tenants/:name` | Required | Delete a tenant |
+| `POST` | `/api/tenants/:name/containers` | Required | Restart or upgrade tenant containers |
 
 #### `POST /api/tenants`
 
@@ -187,6 +190,32 @@ Request body:
   "dropDb": false   // set to true to also drop the PostgreSQL database
 }
 ```
+
+#### `POST /api/tenants/:name/containers`
+
+Restart or upgrade the three service containers for a tenant. Three actions are supported:
+
+**Restart all containers**
+```json
+{ "action": "restart" }
+```
+
+**Restart one service** (`auth`, `rest`, or `storage`)
+```json
+{ "action": "restart-service", "service": "auth" }
+```
+
+**Upgrade to latest images** (reads tags from `versions.json`, force-pulls, then recreates)
+```json
+{ "action": "upgrade" }
+```
+
+Response `200`:
+```json
+{ "ok": true, "action": "restart" }
+```
+
+Rate limit: the login endpoint (`POST /api/auth/login`) enforces a sliding-window rate limit of **5 failed attempts per 15 minutes per IP**. Blocked requests receive HTTP 429 with a `Retry-After` header.
 
 ---
 

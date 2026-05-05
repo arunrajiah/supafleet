@@ -61,6 +61,11 @@ Next.js 14 (App Router) management UI. Runs inside Docker with:
 - The Docker socket mounted (`/var/run/docker.sock`) — allows managing tenant containers via the Docker API
 - The project directory mounted as `/project` — allows reading/writing tenant config files
 
+In addition to provisioning and deleting tenants, the admin UI exposes a **container management** panel on each tenant's detail page:
+
+- **Restart all / restart single service** — issues a Docker `restart` signal to one or all three containers in-place (no image change, typically completes in a few seconds)
+- **Upgrade** — force-pulls the image tags defined in `versions.json`, then stops and recreates the containers with the new images; the database and storage files are untouched
+
 ### `supabase-imgproxy`
 
 Shared image transformation service. All tenants' Storage APIs proxy image transformation requests to this single instance.
@@ -148,6 +153,35 @@ When a tenant is created (UI or CLI), the following steps happen in order:
 All containers join the `supabase-net` Docker bridge network. This gives them internal DNS resolution using container names (e.g. `db`, `rest-myapp`, `supabase-imgproxy`).
 
 The network is declared as `external: false` (managed by Compose) and named `supafleet_supabase-net` by Docker.
+
+---
+
+## Security hardening
+
+### Login rate limiting
+
+The `POST /api/auth/login` endpoint is protected by an in-memory sliding-window rate limiter (`admin/src/lib/rate-limit.ts`):
+
+- **Threshold:** 5 failed attempts within any rolling 15-minute window, tracked per source IP
+- **Response:** HTTP 429 with a `Retry-After` header indicating seconds until the oldest blocking attempt expires
+- **Pre-flight check:** blocked IPs are rejected before bcrypt runs, preventing CPU exhaustion from repeated attempts
+- **Auto-clear:** the counter resets on successful login so legitimate users who previously mistyped their password aren't penalised
+- **Storage:** module-level `Map` — no Redis required; resets on process restart
+
+### HTTP security headers
+
+Every response from nginx carries a standard set of security headers. They are defined in `nginx/nginx.conf` (admin vhost) and injected into every generated tenant config by `admin/src/lib/nginx.ts`.
+
+| Header | Value | Purpose |
+|---|---|---|
+| `X-Content-Type-Options` | `nosniff` | Prevent MIME-type sniffing |
+| `X-Frame-Options` | `SAMEORIGIN` (admin) / `DENY` (tenants) | Clickjacking protection |
+| `X-XSS-Protection` | `1; mode=block` | Legacy browser XSS filter |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | Limit referrer leakage |
+| `Permissions-Policy` | camera, mic, geolocation blocked | Disable unused browser APIs |
+| `Content-Security-Policy` | `self` + `unsafe-inline` (admin) / `default-src 'none'` (tenants) | Restrict resource origins |
+
+`server_tokens off` is also set globally so nginx's version is not advertised in `Server` headers or error pages.
 
 ---
 
