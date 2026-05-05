@@ -65,8 +65,9 @@ cd supafleet
 cp .env.example .env
 nano .env   # set POSTGRES_PASSWORD, JWT_SECRET, DOMAIN
 
-# 3. Start
-docker compose up -d
+# 3. Start  (pulls pre-built image from GHCR — no build step needed)
+make up
+# or: docker compose up -d
 
 # 4. Open your browser
 # → http://your-server-ip

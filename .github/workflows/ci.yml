@@ -51,4 +51,5 @@ jobs:
       - name: Validate compose file
         run: |
           cp .env.example .env
-          docker compose config --quiet
+          # Use --no-interpolate to skip pulling the GHCR image during validation
+          docker compose config --quiet --no-interpolate

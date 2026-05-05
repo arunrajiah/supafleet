@@ -57,6 +57,31 @@ supafleet/
 
 ---
 
+## Quick start with Make
+
+A `Makefile` provides convenience wrappers for common tasks:
+
+```bash
+make help           # list all targets
+
+make up             # pull images + start the stack
+make down           # stop the stack
+make logs           # tail all logs
+make ps             # show running containers (shared + tenant)
+
+make tenant-add name=myapp      # provision a tenant
+make tenant-list                # list all tenants
+make tenant-remove name=myapp   # remove containers (keep DB)
+make tenant-remove-hard name=myapp  # remove containers + DB
+
+make build          # build admin image locally
+make pull           # pull latest image from GHCR
+make lint           # run tsc + shellcheck + compose validate
+make backup         # dump DB + storage to ./backups/
+```
+
+---
+
 ## Running the full stack locally
 
 ### 1. Clone and configure
@@ -71,7 +96,8 @@ cp .env.example .env
 ### 2. Start shared infrastructure
 
 ```bash
-docker compose up -d
+make up
+# or: docker compose up -d
 ```
 
 Visit `http://localhost` → complete the setup wizard.
@@ -88,6 +114,8 @@ npm install
 Stop the `supabase-admin` container (to free port 3000) and run Next.js directly:
 
 ```bash
+make dev
+# or manually:
 docker compose stop admin
 
 cd admin

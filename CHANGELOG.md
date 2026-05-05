@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Added
+- Pre-built Docker image published to GHCR (`ghcr.io/arunrajiah/supafleet/admin`) — no local build required
+- `Makefile` with convenience targets: `up`, `down`, `logs`, `ps`, `build`, `pull`, `tenant-add/remove/list`, `dev`, `lint`, `backup`, `clean`
+- `GET /api/health` endpoint for Docker healthcheck liveness probe
+- `docker-publish.yml` workflow: builds and pushes multi-arch image (`amd64` + `arm64`) to GHCR on every push to `main` and on release tags
+
+### Changed
+- `docker-compose.yml`: admin service now uses pre-built GHCR image by default; added healthcheck; nginx waits for admin to be healthy
+- `docker-compose.yml`: renamed Compose project from `supabase-multidb` → `supafleet`
+
+### Fixed
+- Removed all provider-specific references (DigitalOcean, "droplet", plan names) from docs and README
+
+---
+
 ## [0.1.0] — 2025-05-05
 
 ### Added

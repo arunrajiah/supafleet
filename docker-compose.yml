@@ -1,7 +1,8 @@
-name: supabase-multidb
+name: supafleet
 
-# Shared infrastructure — one per droplet
+# Shared infrastructure — one per server.
 # Per-tenant services are provisioned by: scripts/add-tenant.sh <name>
+# Or use the web UI at http://your-server-ip after first boot.
 
 x-restart: &restart
   restart: unless-stopped
@@ -67,8 +68,17 @@ services:
 
   admin:
     container_name: supabase-admin
-    build: ./admin
+    # Pre-built image from GHCR — no local build required.
+    # For local development, comment out `image:` and uncomment `build:`.
+    image: ghcr.io/arunrajiah/supafleet/admin:latest
+    # build: ./admin
     <<: *restart
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - .:/project
@@ -107,7 +117,7 @@ services:
       db:
         condition: service_healthy
       admin:
-        condition: service_started
+        condition: service_healthy
     networks:
       - supabase-net
 

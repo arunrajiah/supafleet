@@ -2,3 +2,7 @@ node_modules
 .next
 .git
 *.md
+.env*
+.DS_Store
+*.swp
+*.swo
