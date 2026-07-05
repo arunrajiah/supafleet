@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="SupaFleet logo">
+  <defs><linearGradient id="g" x1="12" y1="12" x2="84" y2="84" gradientUnits="userSpaceOnUse"><stop stop-color="#059669"/><stop offset="1" stop-color="#0F172A"/></linearGradient></defs>
+  <rect width="96" height="96" rx="22" fill="url(#g)"/>
+  <path d="M25 31h46M25 48h46M25 65h46" stroke="#fff" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="35" cy="31" r="4" fill="#86EFAC"/><circle cx="61" cy="48" r="4" fill="#86EFAC"/><circle cx="45" cy="65" r="4" fill="#86EFAC"/>
+</svg>

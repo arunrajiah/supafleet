@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/logo.svg" alt="SupaFleet logo" width="96" height="96">
+</p>
+
 # supafleet
 
 > Self-host **multiple isolated Supabase projects** on a single server — each with its own PostgreSQL database, Auth, REST API, and Storage — managed from a web UI.
