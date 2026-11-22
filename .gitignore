@@ -22,9 +22,5 @@ admin/.next/
 *.swp
 *.swo
 
-
-# Local AI assistant / OS / env files
-.claude/
-CLAUDE.md
-CLAUDE.local.md
+# Local OS / env files
 .mcp.json
